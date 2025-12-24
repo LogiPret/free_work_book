@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import { supabase } from '@/lib/supabase';
 import twilio from 'twilio';
 import nodemailer from 'nodemailer';
@@ -185,9 +186,14 @@ export async function POST(request: NextRequest) {
     // Build SMS message
     const smsMessage = `Salut! Ceci est un message automatisé de la part de ${broker.name}. Voici le lien pour voir le PDF: ${publicPdfUrl}`;
 
-    // Send SMS to user and email to broker (fire-and-forget, don't block response)
-    sendSms(telephone, smsMessage);
-    sendBrokerNotification(broker.email, broker.name, userName, telephone, primaryColor);
+    // Use waitUntil to keep function alive after response (Vercel-specific)
+    // This allows fire-and-forget while ensuring tasks complete
+    const backgroundTasks = Promise.all([
+      sendSms(telephone, smsMessage),
+      sendBrokerNotification(broker.email, broker.name, userName, telephone, primaryColor),
+    ]);
+
+    waitUntil(backgroundTasks);
 
     return NextResponse.json({
       success: true,
