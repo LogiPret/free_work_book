@@ -6,9 +6,13 @@ import Link from 'next/link';
 import { Broker, supabase } from '@/lib/supabase';
 
 // Generate a short random token for PDF access (12 chars = 62^12 combinations)
-const generatePdfToken = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+const PDF_TOKEN_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const generatePdfToken = (): string => {
+  let token = '';
+  for (let i = 0; i < 12; i++) {
+    token += PDF_TOKEN_CHARS.charAt(Math.floor(Math.random() * PDF_TOKEN_CHARS.length));
+  }
+  return token;
 };
 
 // Format phone number as (123) 456-7890
