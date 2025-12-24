@@ -77,8 +77,18 @@ async function sendBrokerNotification(
     return;
   }
 
+  // Use dev test email if configured (for testing on Vercel preview/dev)
+  const devEmail = process.env.DEV_TEST_EMAIL;
+  const recipientEmail = devEmail || brokerEmail;
+  const isDev = !!devEmail;
+
+  const devBanner = isDev
+    ? `<div style="background: #fef3c7; padding: 10px; margin-bottom: 20px; border-radius: 4px;"><strong>DEV MODE:</strong> This would be sent to ${brokerEmail} in production</div>`
+    : '';
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      ${devBanner}
       <h2 style="color: ${primaryColor};">Nouveau téléchargement de guide PDF</h2>
       <p>Un visiteur a demandé à recevoir votre guide PDF par SMS.</p>
       
@@ -109,14 +119,18 @@ async function sendBrokerNotification(
     </div>
   `;
 
+  const subject = isDev
+    ? `[DEV TEST - ${brokerName}] Nouveau téléchargement de guide - ${userName}`
+    : `Nouveau téléchargement de guide - ${userName}`;
+
   try {
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
-      to: brokerEmail,
-      subject: `Nouveau téléchargement de guide - ${userName}`,
+      to: recipientEmail,
+      subject,
       html,
     });
-    console.log('[EMAIL] Broker notification sent to:', brokerEmail);
+    console.log('[EMAIL] Broker notification sent to:', recipientEmail);
   } catch (error) {
     console.error('[EMAIL] Failed to send broker notification:', error);
   }

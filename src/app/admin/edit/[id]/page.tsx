@@ -16,6 +16,22 @@ const generatePdfToken = () => {
     .join('-');
 };
 
+// Format phone number as (123) 456-7890
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 0) return '';
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+};
+
+// Format experience to avoid leading zeros
+const formatExperience = (value: string): number => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 0) return 0;
+  return parseInt(digits, 10);
+};
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -265,8 +281,9 @@ export default function EditBrokerPage({ params }: PageProps) {
                   type="tel"
                   required
                   value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onChange={(e) => setForm({ ...form, phone: formatPhoneNumber(e.target.value) })}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="(514) 555-1234"
                 />
               </div>
               <div>
@@ -286,13 +303,14 @@ export default function EditBrokerPage({ params }: PageProps) {
                 Années d&apos;expérience
               </label>
               <input
-                type="number"
-                min="0"
-                value={form.years_experience}
+                type="text"
+                inputMode="numeric"
+                value={form.years_experience === 0 ? '' : form.years_experience}
                 onChange={(e) =>
-                  setForm({ ...form, years_experience: parseInt(e.target.value) || 0 })
+                  setForm({ ...form, years_experience: formatExperience(e.target.value) })
                 }
                 className="w-32 px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
               />
             </div>
 
