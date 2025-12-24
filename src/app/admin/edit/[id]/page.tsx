@@ -171,8 +171,8 @@ export default function EditBrokerPage({ params }: PageProps) {
           className="bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700"
         >
           {error && (
-            <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
-              {error}
+            <div className="sticky top-4 z-50 bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6 shadow-lg">
+              <strong>Erreur:</strong> {error}
             </div>
           )}
 
@@ -377,6 +377,12 @@ export default function EditBrokerPage({ params }: PageProps) {
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="mt-6 bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
+              <strong>Erreur:</strong> {error}
+            </div>
+          )}
 
           <div className="mt-8 flex gap-4">
             <button
