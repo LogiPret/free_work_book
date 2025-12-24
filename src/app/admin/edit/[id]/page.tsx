@@ -5,15 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Broker, supabase } from '@/lib/supabase';
 
-// Generate a secure random token for PDF access
+// Generate a short random token for PDF access (12 chars = 62^12 combinations)
 const generatePdfToken = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const segments = [8, 4, 4, 4, 12];
-  return segments
-    .map((len) =>
-      Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-    )
-    .join('-');
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 };
 
 // Format phone number as (123) 456-7890
