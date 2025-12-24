@@ -1,4 +1,5 @@
 import { getBrokerBySlug, getAllBrokers } from '@/lib/brokers';
+import { getTemplateConfig } from '@/lib/template';
 import BrokerLanding from '@/components/BrokerLanding';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!broker) {
     return {
-      title: 'Broker Not Found',
+      title: 'Courtier introuvable',
     };
   }
 
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${broker.name} - ${broker.company}`,
     description: broker.bio?.slice(0, 160),
     openGraph: {
-      title: `${broker.name} - Mortgage Broker`,
+      title: `${broker.name} - Courtier hypothécaire`,
       description: broker.bio?.slice(0, 160),
       images: broker.photo_url ? [broker.photo_url] : [],
     },
@@ -39,11 +40,11 @@ export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function BrokerPage({ params }: PageProps) {
   const { slug } = await params;
-  const broker = await getBrokerBySlug(slug);
+  const [broker, templateConfig] = await Promise.all([getBrokerBySlug(slug), getTemplateConfig()]);
 
   if (!broker) {
     notFound();
   }
 
-  return <BrokerLanding broker={broker} />;
+  return <BrokerLanding broker={broker} templateConfig={templateConfig} />;
 }
