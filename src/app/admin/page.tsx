@@ -128,7 +128,7 @@ export default function AdminPage() {
               <thead className="bg-gray-700">
                 <tr>
                   <th className="text-left px-6 py-4 font-semibold text-gray-200">Name</th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-200">Company</th>
+                  <th className="text-left px-6 py-4 font-semibold text-gray-200">Agence</th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-200">Slug</th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-200">Actions</th>
                 </tr>
@@ -137,7 +137,7 @@ export default function AdminPage() {
                 {brokers.map((broker) => (
                   <tr key={broker.id} className="border-t border-gray-700">
                     <td className="px-6 py-4 text-gray-200">{broker.name}</td>
-                    <td className="px-6 py-4 text-gray-300">{broker.company}</td>
+                    <td className="px-6 py-4 text-gray-300">{broker.agence}</td>
                     <td className="px-6 py-4">
                       <Link
                         href={`/broker/${broker.slug}`}

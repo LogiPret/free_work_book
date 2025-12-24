@@ -3,22 +3,40 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+
+// Generate a secure random token for PDF access
+const generatePdfToken = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const segments = [8, 4, 4, 4, 12];
+  return segments
+    .map((len) =>
+      Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    )
+    .join('-');
+};
 
 export default function NewBrokerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
     slug: '',
-    company: '',
-    title: 'Mortgage Broker',
+    agence: '',
+    agence_photo_url: '',
+    equipe: '',
+    equipe_photo_url: '',
+    title: 'Courtier hypothécaire',
     photo_url: '',
     phone: '',
     email: '',
     bio: '',
-    license_number: '',
+    pdf_url: '',
+    pdf_token: '',
     years_experience: 0,
     primary_color: '#1e40af',
     accent_color: '#f59e0b',
@@ -40,16 +58,49 @@ export default function NewBrokerPage() {
     });
   };
 
+  const uploadPdf = async (file: File, slug: string): Promise<string | null> => {
+    const fileName = `${slug}-${Date.now()}.pdf`;
+    const { data, error } = await supabase.storage.from('broker-pdfs').upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+    if (error) {
+      console.error('PDF upload error:', error);
+      return null;
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage.from('broker-pdfs').getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
+      let pdfUrl = form.pdf_url;
+      let pdfToken = form.pdf_token;
+
+      // Upload PDF if a file was selected
+      if (pdfFile) {
+        setUploadingPdf(true);
+        const uploadedUrl = await uploadPdf(pdfFile, form.slug);
+        if (uploadedUrl) {
+          pdfUrl = uploadedUrl;
+          // Generate a new token for the PDF
+          pdfToken = generatePdfToken();
+        }
+        setUploadingPdf(false);
+      }
+
       const res = await fetch('/api/brokers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, pdf_url: pdfUrl, pdf_token: pdfToken }),
       });
 
       if (!res.ok) {
@@ -117,56 +168,66 @@ export default function NewBrokerPage() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Company *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Agence *</label>
                 <input
                   type="text"
                   required
-                  value={form.company}
-                  onChange={(e) => setForm({ ...form, company: e.target.value })}
+                  value={form.agence}
+                  onChange={(e) => setForm({ ...form, agence: e.target.value })}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Smith Mortgage Co"
+                  placeholder="Groupe Hypothécaire ABC"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Logo Agence (URL)
+                </label>
+                <input
+                  type="url"
+                  value={form.agence_photo_url}
+                  onChange={(e) => setForm({ ...form, agence_photo_url: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://..."
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Équipe</label>
+                <input
+                  type="text"
+                  value={form.equipe}
+                  onChange={(e) => setForm({ ...form, equipe: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Équipe Tremblay"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Logo Équipe (URL)
+                </label>
+                <input
+                  type="url"
+                  value={form.equipe_photo_url}
+                  onChange={(e) => setForm({ ...form, equipe_photo_url: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://..."
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Titre</label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Mortgage Broker"
+                  placeholder="Courtier hypothécaire"
                 />
               </div>
-            </div>
-
-            {/* Contact Info */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Phone *</label>
-                <input
-                  type="tel"
-                  required
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="(555) 123-4567"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="john@smithmortgage.com"
-                />
-              </div>
-            </div>
-
-            {/* Photo & License */}
-            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Photo URL</label>
                 <input
@@ -177,16 +238,30 @@ export default function NewBrokerPage() {
                   placeholder="https://..."
                 />
               </div>
+            </div>
+
+            {/* Contact Info */}
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  License Number
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone *</label>
                 <input
-                  type="text"
-                  value={form.license_number}
-                  onChange={(e) => setForm({ ...form, license_number: e.target.value })}
+                  type="tel"
+                  required
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="ABC123456"
+                  placeholder="(514) 555-1234"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Courriel *</label>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="courtier@agence.ca"
                 />
               </div>
             </div>
@@ -194,7 +269,7 @@ export default function NewBrokerPage() {
             {/* Years Experience */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Years of Experience
+                Années d&apos;expérience
               </label>
               <input
                 type="number"
@@ -209,15 +284,34 @@ export default function NewBrokerPage() {
 
             {/* Bio */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Bio *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Bio</label>
               <textarea
-                required
                 rows={4}
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="Tell potential clients about yourself..."
               />
+            </div>
+
+            {/* PDF Guide Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Guide PDF</label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setPdfFile(file);
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer"
+                />
+                {pdfFile && <span className="text-sm text-green-400">{pdfFile.name}</span>}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Le PDF sera envoyé par SMS aux demandeurs
+              </p>
             </div>
 
             {/* Theme Colors */}
@@ -253,7 +347,11 @@ export default function NewBrokerPage() {
               disabled={loading}
               className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Broker'}
+              {uploadingPdf
+                ? 'Téléversement du PDF...'
+                : loading
+                  ? 'Création...'
+                  : 'Créer le courtier'}
             </button>
             <Link
               href="/admin"

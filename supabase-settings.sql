@@ -37,3 +37,31 @@ CREATE POLICY "Allow public read" ON site_settings FOR SELECT USING (true);
 
 -- Allow update
 CREATE POLICY "Allow update" ON site_settings FOR UPDATE USING (true);
+
+-- PDF Requests tracking table
+CREATE TABLE IF NOT EXISTS pdf_requests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  broker_id UUID REFERENCES brokers(id) ON DELETE CASCADE,
+  prenom TEXT NOT NULL,
+  nom TEXT NOT NULL,
+  telephone TEXT NOT NULL,
+  pdf_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for faster broker lookups
+CREATE INDEX IF NOT EXISTS idx_pdf_requests_broker ON pdf_requests(broker_id);
+
+-- Enable RLS
+ALTER TABLE pdf_requests ENABLE ROW LEVEL SECURITY;
+
+-- Allow insert (public can submit requests)
+CREATE POLICY "Allow public insert" ON pdf_requests FOR INSERT WITH CHECK (true);
+
+-- Allow read for admins
+CREATE POLICY "Allow read" ON pdf_requests FOR SELECT USING (true);
+
+-- Supabase Storage bucket for PDFs
+-- Run this in your Supabase dashboard > Storage > Create new bucket
+-- Bucket name: broker-pdfs
+-- Public bucket: Yes (so PDFs are accessible via URL)

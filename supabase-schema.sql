@@ -6,13 +6,17 @@ CREATE TABLE IF NOT EXISTS brokers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
-  company TEXT NOT NULL,
-  title TEXT DEFAULT 'Mortgage Broker',
+  agence TEXT NOT NULL,
+  agence_photo_url TEXT,
+  equipe TEXT,
+  equipe_photo_url TEXT,
+  title TEXT DEFAULT 'Courtier hypothécaire',
   photo_url TEXT,
   phone TEXT NOT NULL,
   email TEXT NOT NULL,
   bio TEXT,
-  license_number TEXT,
+  pdf_url TEXT,
+  pdf_token TEXT UNIQUE,
   years_experience INTEGER DEFAULT 0,
   primary_color TEXT DEFAULT '#1e40af',
   accent_color TEXT DEFAULT '#f59e0b',
@@ -22,6 +26,9 @@ CREATE TABLE IF NOT EXISTS brokers (
 
 -- Create an index on slug for faster lookups
 CREATE INDEX IF NOT EXISTS idx_brokers_slug ON brokers(slug);
+
+-- Create an index on pdf_token for PDF access lookups
+CREATE INDEX IF NOT EXISTS idx_brokers_pdf_token ON brokers(pdf_token);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE brokers ENABLE ROW LEVEL SECURITY;

@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${broker.name} - ${broker.company}`,
+    title: `${broker.name} - ${broker.agence}`,
     description: broker.bio?.slice(0, 160),
     openGraph: {
       title: `${broker.name} - Courtier hypothécaire`,

@@ -1,224 +1,259 @@
 'use client';
 
 import { TemplateConfig } from '@/lib/template';
-import { Broker } from '@/lib/supabase';
-
-// Sample broker data for preview
-const sampleBroker: Broker = {
-  id: 'preview',
-  slug: 'preview',
-  name: 'Jean Tremblay',
-  company: 'Hypothèques Tremblay',
-  title: 'Courtier Hypothécaire',
-  photo_url: '',
-  phone: '(514) 555-1234',
-  email: 'jean@exemple.com',
-  bio: "Avec plus de 15 ans d'expérience dans l'industrie hypothécaire, je me spécialise dans l'aide aux premiers acheteurs et aux familles pour trouver la solution de financement parfaite. Mon engagement envers la transparence et le service personnalisé a aidé des centaines de clients à réaliser leurs rêves de propriété.",
-  license_number: 'ABC123456',
-  years_experience: 15,
-  primary_color: '#1e40af',
-  accent_color: '#f59e0b',
-  created_at: '',
-  updated_at: '',
-};
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  ArrowRight,
+  FileText,
+  Mail,
+  Phone,
+  BookOpen,
+  TrendingUp,
+  Users,
+  AlertCircle,
+  Building,
+} from 'lucide-react';
 
 interface TemplatePreviewProps {
   config: TemplateConfig;
 }
 
+const iconList = [BookOpen, TrendingUp, Users, AlertCircle, Building];
+
+// Sample broker for preview
+const sampleBroker = {
+  name: 'Marie Tremblay',
+  agence: 'Groupe Hypothécaire MT',
+  equipe: 'Équipe Tremblay',
+  title: 'Courtière hypothécaire',
+  phone: '(514) 555-1234',
+  email: 'marie@groupemt.ca',
+  photo_url: '',
+};
+
 export default function TemplatePreview({ config }: TemplatePreviewProps) {
-  const broker = sampleBroker;
-  const primaryColor = broker.primary_color || '#1e40af';
-  const accentColor = broker.accent_color || '#f59e0b';
-
-  const getSectionById = (id: string) => config.sections.find((s) => s.id === id);
-
-  const renderSection = (sectionId: string) => {
-    const section = getSectionById(sectionId);
-    if (!section?.enabled) return null;
-
-    switch (sectionId) {
-      case 'hero':
-        return (
-          <header
-            key="hero"
-            className="text-white py-12 px-4"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6">
-              <div className="w-28 h-28 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
-                {broker.name.charAt(0)}
-              </div>
-              <div className="text-center md:text-left">
-                <h1 className="text-3xl font-bold mb-1">{broker.name}</h1>
-                <p className="text-lg opacity-90">{broker.title}</p>
-                <p className="opacity-80">{broker.company}</p>
-                {broker.license_number && (
-                  <p className="text-sm opacity-70 mt-1">Licence #{broker.license_number}</p>
-                )}
-              </div>
-            </div>
-          </header>
-        );
-
-      case 'contact_info':
-        return (
-          <div key="contact_info" className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4" style={{ color: primaryColor }}>
-              {section.title}
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  Tel
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Téléphone</p>
-                  <p className="font-semibold text-sm">{broker.phone}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  @
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Courriel</p>
-                  <p className="font-semibold text-sm">{broker.email}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'about':
-        return (
-          <div key="about" className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-bold mb-3" style={{ color: primaryColor }}>
-              {section.title}
-            </h2>
-            <p className="text-gray-700 text-sm leading-relaxed">{broker.bio}</p>
-            {broker.years_experience > 0 && (
-              <div className="mt-4">
-                <span
-                  className="px-3 py-1 rounded-full text-white text-xs font-semibold"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  {broker.years_experience}+ ans d&apos;expérience
-                </span>
-              </div>
-            )}
-          </div>
-        );
-
-      case 'services':
-        return (
-          <div key="services" className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4" style={{ color: primaryColor }}>
-              {section.title}
-            </h2>
-            <div className="grid md:grid-cols-2 gap-2">
-              {config.services.map((service, i) => (
-                <div key={i} className="flex items-center gap-2 p-2">
-                  <span style={{ color: accentColor }}>✓</span>
-                  <span className="text-gray-700 text-sm">{service}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'cta':
-        return (
-          <div
-            key="cta"
-            className="rounded-xl p-6 text-center text-white mb-6"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <h2 className="text-xl font-bold mb-3">{section.title}</h2>
-            <p className="mb-4 opacity-90 text-sm">{config.ctaText}</p>
-            <button
-              className="px-6 py-2 rounded-full font-semibold text-sm"
-              style={{ backgroundColor: accentColor }}
-            >
-              {config.ctaButton}
-            </button>
-          </div>
-        );
-
-      case 'contact_form':
-        return (
-          <div key="contact_form" className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4" style={{ color: primaryColor }}>
-              {section.title}
-            </h2>
-            <div className="space-y-3">
-              <div className="grid md:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Votre nom"
-                  className="px-3 py-2 border rounded text-sm"
-                  disabled
-                />
-                <input
-                  type="email"
-                  placeholder="Courriel"
-                  className="px-3 py-2 border rounded text-sm"
-                  disabled
-                />
-              </div>
-              <input
-                type="tel"
-                placeholder="Téléphone"
-                className="w-full px-3 py-2 border rounded text-sm"
-                disabled
-              />
-              <textarea
-                placeholder="Votre message..."
-                rows={3}
-                className="w-full px-3 py-2 border rounded text-sm"
-                disabled
-              />
-              <button
-                className="w-full py-2 rounded text-white font-semibold text-sm"
-                style={{ backgroundColor: primaryColor }}
-                disabled
-              >
-                Envoyer le message
-              </button>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
+  const isSectionEnabled = (id: string) => {
+    const section = config.sections.find((s) => s.id === id);
+    return section?.enabled ?? true;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {config.sections.map((section) => (
-        <div key={section.id}>
-          {section.id === 'hero' ? (
-            renderSection('hero')
-          ) : (
-            <div className="max-w-4xl mx-auto px-4">{renderSection(section.id)}</div>
-          )}
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <header className="w-full border-b border-border/40 bg-background">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-center px-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
+              {sampleBroker.name.charAt(0)}
+            </div>
+            <div className="text-center">
+              <p className="text-base font-semibold text-foreground">{sampleBroker.name}</p>
+              <p className="text-xs text-muted-foreground">{sampleBroker.agence}</p>
+            </div>
+          </div>
         </div>
-      ))}
+      </header>
+
+      <main>
+        {/* Hero Section */}
+        {isSectionEnabled('hero') && (
+          <section className="relative px-4 py-16 sm:py-20">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs text-accent font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                {config.heroBadge}
+              </div>
+
+              <h1 className="font-serif text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
+                {config.heroTitle}
+              </h1>
+
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                {config.heroSubtitle}
+              </p>
+
+              <div className="mt-6">
+                <Button size="default" className="group gap-2">
+                  {config.heroButtonText}
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </div>
+
+              <p className="mt-3 text-xs text-muted-foreground">{config.heroNote}</p>
+            </div>
+          </section>
+        )}
+
+        {/* Guide Preview / Broker Info Section */}
+        {isSectionEnabled('guide') && (
+          <section className="px-4 py-10">
+            <div className="mx-auto max-w-3xl">
+              <Card className="overflow-hidden border-border/60 shadow-sm">
+                <CardContent className="p-0">
+                  <div className="grid gap-0 md:grid-cols-2">
+                    {/* Guide Info */}
+                    <div className="flex flex-col justify-center bg-secondary/30 p-6">
+                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <h2 className="font-serif text-lg font-medium text-foreground">
+                        {config.guideTitle}
+                      </h2>
+                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        {config.guideDescription}
+                      </p>
+                      <div className="mt-4">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                          {config.guideBadge}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Broker Info */}
+                    <div className="flex flex-col justify-center p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="h-12 w-12 shrink-0 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground">
+                          {sampleBroker.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-foreground">
+                            {sampleBroker.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">{sampleBroker.title}</p>
+                          <p className="text-xs text-muted-foreground">{sampleBroker.agence}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Phone className="h-3 w-3" />
+                          {sampleBroker.phone}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Mail className="h-3 w-3" />
+                          {sampleBroker.email}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
+
+        {/* Value Section - Learning Points */}
+        {isSectionEnabled('value') && (
+          <section className="bg-card px-4 py-12">
+            <div className="mx-auto max-w-4xl">
+              <div className="mb-8 text-center">
+                <h2 className="font-serif text-xl font-medium text-foreground sm:text-2xl">
+                  {config.valueTitle}
+                </h2>
+                <p className="mx-auto mt-2 max-w-xl text-xs text-muted-foreground">
+                  {config.valueSubtitle}
+                </p>
+              </div>
+
+              {/* Cards grid */}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {config.learningPoints.slice(0, 3).map((point, index) => {
+                  const Icon = iconList[index % iconList.length];
+                  return (
+                    <Card key={index} className="border-border/40 bg-background">
+                      <CardContent className="p-4">
+                        <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+                          <Icon className="h-4 w-4 text-accent" />
+                        </div>
+                        <h3 className="text-sm font-medium text-foreground">{point.title}</h3>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          {point.description}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {config.learningPoints.length > 3 && (
+                <div className="mt-3 flex flex-wrap justify-center gap-3">
+                  {config.learningPoints.slice(3).map((point, index) => {
+                    const Icon = iconList[(index + 3) % iconList.length];
+                    return (
+                      <Card
+                        key={index + 3}
+                        className="w-full max-w-xs border-border/40 bg-background"
+                      >
+                        <CardContent className="p-4">
+                          <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+                            <Icon className="h-4 w-4 text-accent" />
+                          </div>
+                          <h3 className="text-sm font-medium text-foreground">{point.title}</h3>
+                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                            {point.description}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Final CTA Section */}
+        {isSectionEnabled('cta') && (
+          <section className="bg-primary px-4 py-12">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="font-serif text-xl font-medium text-primary-foreground sm:text-2xl">
+                {config.ctaTitle}
+              </h2>
+              <p className="mx-auto mt-3 max-w-lg text-sm text-primary-foreground/80">
+                {config.ctaText}
+              </p>
+
+              <div className="mt-6">
+                <Button size="default" variant="secondary" className="group gap-2">
+                  {config.ctaButton}
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </div>
+
+              <p className="mt-3 text-xs text-primary-foreground/60">{config.ctaNote}</p>
+            </div>
+          </section>
+        )}
+
+        {/* Contact Form Preview */}
+        <section className="px-4 py-12">
+          <div className="mx-auto max-w-lg text-center">
+            <h2 className="font-serif text-xl font-medium text-foreground">Contactez-moi</h2>
+            <p className="mt-2 text-xs text-muted-foreground">Formulaire de contact (aperçu)</p>
+            <Card className="mt-6">
+              <CardContent className="p-4 text-left">
+                <div className="space-y-3">
+                  <div className="h-8 rounded bg-input/50"></div>
+                  <div className="h-8 rounded bg-input/50"></div>
+                  <div className="h-16 rounded bg-input/50"></div>
+                  <Button size="sm" className="w-full">
+                    Envoyer
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-6 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="font-semibold">{broker.name}</p>
-          <p className="text-gray-400 text-sm">{broker.company}</p>
-          <p className="text-xs text-gray-500 mt-2">
-            © {new Date().getFullYear()} Tous droits réservés.
+      <footer className="border-t border-border bg-background px-4 py-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <p className="text-base font-semibold text-foreground">{sampleBroker.name}</p>
+          <p className="text-xs text-muted-foreground">{sampleBroker.agence}</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            &copy; {new Date().getFullYear()} Tous droits réservés.
           </p>
         </div>
       </footer>

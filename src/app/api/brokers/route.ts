@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate required fields
-    const required = ['name', 'slug', 'company', 'phone', 'email', 'bio'];
+    const required = ['name', 'slug', 'agence', 'phone', 'email'];
     for (const field of required) {
       if (!body[field]) {
         return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 });

@@ -3,7 +3,18 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Broker } from '@/lib/supabase';
+import { Broker, supabase } from '@/lib/supabase';
+
+// Generate a secure random token for PDF access
+const generatePdfToken = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const segments = [8, 4, 4, 4, 12];
+  return segments
+    .map((len) =>
+      Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    )
+    .join('-');
+};
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -15,17 +26,23 @@ export default function EditBrokerPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
     slug: '',
-    company: '',
+    agence: '',
+    agence_photo_url: '',
+    equipe: '',
+    equipe_photo_url: '',
     title: '',
     photo_url: '',
     phone: '',
     email: '',
     bio: '',
-    license_number: '',
+    pdf_url: '',
+    pdf_token: '',
     years_experience: 0,
     primary_color: '#1e40af',
     accent_color: '#f59e0b',
@@ -40,13 +57,17 @@ export default function EditBrokerPage({ params }: PageProps) {
         setForm({
           name: broker.name,
           slug: broker.slug,
-          company: broker.company,
+          agence: broker.agence,
+          agence_photo_url: broker.agence_photo_url || '',
+          equipe: broker.equipe || '',
+          equipe_photo_url: broker.equipe_photo_url || '',
           title: broker.title || '',
           photo_url: broker.photo_url || '',
           phone: broker.phone,
           email: broker.email,
           bio: broker.bio || '',
-          license_number: broker.license_number || '',
+          pdf_url: broker.pdf_url || '',
+          pdf_token: broker.pdf_token || '',
           years_experience: broker.years_experience || 0,
           primary_color: broker.primary_color || '#1e40af',
           accent_color: broker.accent_color || '#f59e0b',
@@ -60,16 +81,47 @@ export default function EditBrokerPage({ params }: PageProps) {
     fetchBroker();
   }, [id]);
 
+  const uploadPdf = async (file: File, slug: string): Promise<string | null> => {
+    const fileName = `${slug}-${Date.now()}.pdf`;
+    const { data, error } = await supabase.storage.from('broker-pdfs').upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+    if (error) {
+      console.error('PDF upload error:', error);
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage.from('broker-pdfs').getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError('');
 
     try {
+      let pdfUrl = form.pdf_url;
+      let pdfToken = form.pdf_token;
+
+      if (pdfFile) {
+        setUploadingPdf(true);
+        const uploadedUrl = await uploadPdf(pdfFile, form.slug);
+        if (uploadedUrl) {
+          pdfUrl = uploadedUrl;
+          // Generate a new token when uploading a new PDF
+          pdfToken = generatePdfToken();
+        }
+        setUploadingPdf(false);
+      }
+
       const res = await fetch(`/api/brokers/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, pdf_url: pdfUrl, pdf_token: pdfToken }),
       });
 
       if (!res.ok) {
@@ -140,21 +192,23 @@ export default function EditBrokerPage({ params }: PageProps) {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Company *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Agence *</label>
                 <input
                   type="text"
                   required
-                  value={form.company}
-                  onChange={(e) => setForm({ ...form, company: e.target.value })}
+                  value={form.agence}
+                  onChange={(e) => setForm({ ...form, agence: e.target.value })}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Logo Agence (URL)
+                </label>
                 <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  type="url"
+                  value={form.agence_photo_url}
+                  onChange={(e) => setForm({ ...form, agence_photo_url: e.target.value })}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -162,7 +216,51 @@ export default function EditBrokerPage({ params }: PageProps) {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Phone *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Équipe</label>
+                <input
+                  type="text"
+                  value={form.equipe}
+                  onChange={(e) => setForm({ ...form, equipe: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Logo Équipe (URL)
+                </label>
+                <input
+                  type="url"
+                  value={form.equipe_photo_url}
+                  onChange={(e) => setForm({ ...form, equipe_photo_url: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Titre</label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Photo URL</label>
+                <input
+                  type="url"
+                  value={form.photo_url}
+                  onChange={(e) => setForm({ ...form, photo_url: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone *</label>
                 <input
                   type="tel"
                   required
@@ -172,7 +270,7 @@ export default function EditBrokerPage({ params }: PageProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Courriel *</label>
                 <input
                   type="email"
                   required
@@ -183,32 +281,9 @@ export default function EditBrokerPage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Photo URL</label>
-                <input
-                  type="url"
-                  value={form.photo_url}
-                  onChange={(e) => setForm({ ...form, photo_url: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  License Number
-                </label>
-                <input
-                  type="text"
-                  value={form.license_number}
-                  onChange={(e) => setForm({ ...form, license_number: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Years of Experience
+                Années d&apos;expérience
               </label>
               <input
                 type="number"
@@ -230,6 +305,39 @@ export default function EditBrokerPage({ params }: PageProps) {
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            {/* PDF Guide Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Guide PDF</label>
+              {form.pdf_url && (
+                <p className="text-sm text-green-400 mb-2">
+                  PDF actuel:{' '}
+                  <a
+                    href={form.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Voir le PDF
+                  </a>
+                </p>
+              )}
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setPdfFile(file);
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer"
+                />
+                {pdfFile && <span className="text-sm text-green-400">{pdfFile.name}</span>}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Téléverser un nouveau PDF remplacera l&apos;existant
+              </p>
             </div>
 
             <div>
@@ -263,7 +371,7 @@ export default function EditBrokerPage({ params }: PageProps) {
               disabled={saving}
               className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {uploadingPdf ? 'Téléversement du PDF...' : saving ? 'Sauvegarde...' : 'Sauvegarder'}
             </button>
             <Link
               href="/admin"

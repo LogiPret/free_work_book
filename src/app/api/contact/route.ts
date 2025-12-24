@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       const subject =
         isDev && devEmail
           ? `[DEV TEST - ${broker.name}] Nouvelle demande de ${name}`
-          : `Nouvelle demande de ${name} - ${broker.company}`;
+          : `Nouvelle demande de ${name} - ${broker.agence}`;
 
       // Send email in background - don't block the response
       transporter

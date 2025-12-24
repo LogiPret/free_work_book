@@ -31,7 +31,7 @@ export default async function Home() {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-800">{broker.name}</h2>
-                    <p className="text-gray-600">{broker.company}</p>
+                    <p className="text-gray-600">{broker.agence}</p>
                   </div>
                 </div>
               </Link>
